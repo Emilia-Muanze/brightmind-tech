@@ -1,65 +1,63 @@
-pipeline {
+ pipeline {
     agent any
+   
     tools {
-        jdk 'JDK21'
+        jdk 'JDK-21'  // Change to JDK-21 if you're using Java 21
         maven 'Maven 3.9.9'
     }
+   
     stages {
-        stage('Checkout Source') {
-    steps {
-        echo 'Checking out source code...'
-        git branch: 'main', url: 'git@github.com:Emilia-Muanze/brightmind-tech.git'
-    }
-}
-        stage('Build') {
+        stage('Checkout') {
             steps {
-                echo 'Compiling the application...'
-                bat 'mvn clean compile'
+                echo 'Checking out source code...'
+                checkout scm
             }
         }
+       
+        stage('Build') {
+            steps {
+                echo 'Building the application...'
+                bat 'mvn clean compile'  // Use 'sh' instead of 'bat' on Linux/Mac
+            }
+        }
+       
         stage('Test') {
             steps {
                 echo 'Running tests...'
-                bat 'mvn test'
+                bat 'mvn test'  // Use 'sh' instead of 'bat' on Linux/Mac
             }
         }
+       
         stage('Package') {
             steps {
                 echo 'Packaging the application...'
-                bat 'mvn package'
+                bat 'mvn package'  // Use 'sh' instead of 'bat' on Linux/Mac
             }
         }
+       
         stage('Deploy to Tomcat') {
             steps {
                 echo 'Deploying to Tomcat...'
-                script {
-                    def warFile = "target/brightmind-tech.war"
-                    if (fileExists(warFile)) {
-                        deploy adapters: [
-                            tomcat9(
-                                credentialsId: 'TomcatCreds',
-                                url: 'http://localhost:8080'
-                            )
-                        ],
-                        contextPath: '/brightmind-tech',
-                        war: warFile
-                    } else {
-                        error "ERROR: WAR file ${warFile} not found!"
-                    }
-                }
+                deploy adapters: [tomcat9(credentialsId: 'TomcatCreds',
+                                         path: '',
+                                         url: 'http://localhost:8080/')],
+                       contextPath: '/brightmind-tech',
+                       war: 'target/*.war'
             }
         }
     }
+   
     post {
         always {
             echo 'Cleaning up workspace...'
-            deleteDir()
+            cleanWs()
         }
         success {
             echo 'Pipeline completed successfully!'
         }
         failure {
-            echo 'Pipeline failed. Check build logs for details.'
+            echo 'Pipeline failed. Check the logs for details.'
         }
     }
-}
+ }
+ 
